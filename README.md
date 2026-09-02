@@ -5,9 +5,9 @@
 1. Crea un foglio Google e rinomina il foglio attivo in `Wishlist`.
 2. Inserisci nella prima riga, esattamente, queste intestazioni:
 
-   `ID | Nome | Prezzo | LinkProdotti | Foto | Prenotato | PrenotatoDa`
+   `ID | Nome | Prezzo | LinkProdotti | Foto | Note | Prenotato | PrenotatoDa`
 
-3. Inserisci una riga per ogni regalo. In `LinkProdotti` usa il formato `Etichetta|URL`, separando più negozi con una virgola. In `Foto` inserisci gli URL delle immagini separati da virgola. Lascia `Prenotato` su `FALSE` e `PrenotatoDa` vuoto per i nuovi regali.
+3. Inserisci una riga per ogni regalo. In `LinkProdotti` usa il formato `Etichetta|URL`, separando più negozi con una virgola. In `Foto` inserisci gli URL delle immagini separati da virgola. `Note` è facoltativa. Lascia `Prenotato` su `FALSE` e `PrenotatoDa` vuoto per i nuovi regali.
 
 ## 2. Pubblica l'API Apps Script
 
@@ -32,8 +32,8 @@ Il browser crea automaticamente un `sessionId` casuale e lo conserva in `localSt
 
 ## Formato di esempio
 
-| ID | Nome | Prezzo | LinkProdotti | Foto | Prenotato | PrenotatoDa |
-| --- | --- | ---: | --- | --- | --- | --- |
-| regalo-001 | Cuffie | 45.00 | Amazon\|https://example.com | https://example.com/cuffie.jpg | FALSE | |
+| ID | Nome | Prezzo | LinkProdotti | Foto | Note | Prenotato | PrenotatoDa |
+| --- | --- | ---: | --- | --- | --- | --- | --- |
+| regalo-001 | Cuffie | 45.00 | Amazon\|https://example.com | https://example.com/cuffie.jpg | Colore nero | FALSE | |
 
 Per modificare la lista dopo la pubblicazione, aggiorna il foglio: la pagina ricarica i dati dal server ogni volta che viene aperta.
