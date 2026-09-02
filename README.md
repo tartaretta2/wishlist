@@ -7,7 +7,7 @@
 
    `ID | Nome | Prezzo | LinkProdotti | Foto | Note | Prenotato | PrenotatoDa`
 
-3. Inserisci una riga per ogni regalo. In `LinkProdotti` usa il formato `Etichetta|URL`, separando più negozi con una virgola. In `Foto` inserisci gli URL delle immagini separati da virgola. `Note` è facoltativa. Lascia `Prenotato` su `FALSE` e `PrenotatoDa` vuoto per i nuovi regali.
+3. Inserisci una riga per ogni regalo. In `Prezzo` puoi usare un numero (`45`) oppure un intervallo (`100 - 140`). In `LinkProdotti` puoi usare `Etichetta|URL, Etichetta|URL` oppure solo `URL, URL`. In `Foto` inserisci gli URL delle immagini separati da virgola. `Note` è facoltativa. Lascia `Prenotato` su `FALSE` e `PrenotatoDa` vuoto per i nuovi regali.
 
 ## 2. Pubblica l'API Apps Script
 

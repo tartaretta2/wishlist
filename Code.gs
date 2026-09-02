@@ -79,7 +79,7 @@ function rowToGift_(row) {
   return {
     id: String(row[columns.id - 1]).trim(),
     name: String(row[columns.name - 1] || '').trim(),
-    price: Number(row[columns.price - 1]) || 0,
+    price: parsePriceRange_(row[columns.price - 1]),
     links: parseLinks_(row[columns.links - 1]),
     photos: String(row[columns.photos - 1] || '').split(',').map(value => value.trim()).filter(Boolean),
     note: String(row[columns.note - 1] || '').trim(),
@@ -88,12 +88,36 @@ function rowToGift_(row) {
   };
 }
 
+function parsePriceRange_(value) {
+  const text = String(value || '').trim().replace(/,/g, '.');
+  const numbers = text.match(/\d+(?:\.\d+)?/g);
+  if (!numbers || numbers.length === 0) return { min: 0, max: 0, label: '' };
+
+  const parsed = numbers.map(Number).filter(number => !isNaN(number));
+  const min = parsed[0] || 0;
+  const max = parsed[1] || min;
+  return { min: Math.min(min, max), max: Math.max(min, max), label: text };
+}
+
 function parseLinks_(value) {
-  return String(value || '').split(',').map(item => {
-    const separator = item.indexOf('|');
-    if (separator === -1) return null;
-    return { label: item.slice(0, separator).trim(), url: item.slice(separator + 1).trim() };
-  }).filter(link => link && link.label && link.url);
+  return String(value || '')
+    .split(/[,\n]+/)
+    .map(item => item.trim())
+    .filter(Boolean)
+    .map(item => {
+      const separator = item.indexOf('|');
+      const url = separator === -1 ? item : item.slice(separator + 1).trim();
+      const label = separator === -1 ? getLinkLabel_(url) : item.slice(0, separator).trim();
+
+      if (!/^https?:\/\/\S+$/i.test(url) || !label) return null;
+      return { label: label, url: url };
+    })
+    .filter(Boolean);
+}
+
+function getLinkLabel_(url) {
+  const match = url.match(/^https?:\/\/([^/]+)/i);
+  return match ? match[1].replace(/^www\./i, '') : 'Apri prodotto';
 }
 
 function isTrue_(value) {
