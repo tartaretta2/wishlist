@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Wishlist di regali">
+  <title>Wishlist dei regali</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Fraunces:opsz,wght@9..144,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script defer src="script.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <div>
+        <p class="eyebrow">Una scelta speciale</p>
+        <h1>La mia wishlist</h1>
+      </div>
+      <button class="cart-button" id="cartButton" type="button" aria-label="Apri i miei regali scelti" aria-controls="cartDrawer" aria-expanded="false">
+        <span class="bag-icon" aria-hidden="true">♡</span>
+        <span class="cart-label">I miei regali</span>
+        <span class="badge" id="cartCount">0</span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <section class="intro" aria-labelledby="pageHeading">
+      <div>
+        <p class="eyebrow">Scegli con calma</p>
+        <h2 id="pageHeading">Trova il regalo giusto</h2>
+      </div>
+      <p class="intro-copy">Sfoglia le idee e scegli quelle che ti piacciono di più. Le tue scelte resteranno riservate a questo dispositivo.</p>
+    </section>
+
+    <section class="filter-bar" aria-labelledby="filterHeading">
+      <h2 id="filterHeading">Filtra per prezzo</h2>
+      <div class="filter-options" id="filterOptions" role="group" aria-label="Fasce di prezzo">
+        <button class="filter-button is-active" type="button" data-filter="all">Tutti</button>
+        <button class="filter-button" type="button" data-filter="under30">Meno di 30 €</button>
+        <button class="filter-button" type="button" data-filter="30to50">30 € - 50 €</button>
+        <button class="filter-button" type="button" data-filter="50to80">50 € - 80 €</button>
+        <button class="filter-button" type="button" data-filter="over80">Più di 80 €</button>
+      </div>
+    </section>
+
+    <section class="gifts-section" aria-live="polite">
+      <div class="section-heading"><h2>Idee regalo</h2><span id="resultCount"></span></div>
+      <div class="gift-grid" id="giftGrid"></div>
+      <div class="state-message" id="stateMessage">Caricamento della wishlist...</div>
+    </section>
+  </main>
+
+  <div class="drawer-backdrop" id="drawerBackdrop" hidden></div>
+  <aside class="cart-drawer" id="cartDrawer" aria-labelledby="cartTitle" aria-hidden="true">
+    <div class="drawer-header">
+      <div><p class="eyebrow">Le tue scelte</p><h2 id="cartTitle">I miei regali</h2></div>
+      <button class="icon-button" id="closeCartButton" type="button" aria-label="Chiudi i miei regali">×</button>
+    </div>
+    <div class="cart-list" id="cartList"></div>
+  </aside>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
