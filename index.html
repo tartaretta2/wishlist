@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Wishlist di regali">
   <title>Wishlist dei regali</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='8' y='25' width='48' height='32' rx='4' fill='%23ff7a18'/%3E%3Cpath d='M8 25h48v10H8zM30 25v32' fill='%230b1222'/%3E%3Cpath d='M32 25c-13 0-17-5-13-11 4-6 13 2 13 11Zm0 0c13 0 17-5 13-11-4-6-13 2-13 11Z' fill='%23ffae70' stroke='%230b1222' stroke-width='3'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Fraunces:opsz,wght@9..144,600&display=swap" rel="stylesheet">
@@ -39,24 +40,23 @@
       <h2 id="filterHeading">Filtra per prezzo</h2>
       <div class="filter-options" id="filterOptions" role="group" aria-label="Fasce di prezzo">
         <label class="filter-check"><input type="checkbox" value="all" checked> <span>Tutti</span></label>
-        <label class="filter-check"><input type="checkbox" value="under30"> <span>Meno di 30 €</span></label>
-        <label class="filter-check"><input type="checkbox" value="under50"> <span>Meno di 50 €</span></label>
-        <label class="filter-check"><input type="checkbox" value="30to50"> <span>30 € - 50 €</span></label>
-        <label class="filter-check"><input type="checkbox" value="50to80"> <span>50 € - 80 €</span></label>
-        <label class="filter-check"><input type="checkbox" value="80to120"> <span>80 € - 120 €</span></label>
-        <label class="filter-check"><input type="checkbox" value="120to200"> <span>120 € - 200 €</span></label>
+        <label class="filter-check"><input type="checkbox" value="under30"> <span>10 - 30 €</span></label>
+        <label class="filter-check"><input type="checkbox" value="30to50"> <span>30 - 50 €</span></label>
+        <label class="filter-check"><input type="checkbox" value="50to80"> <span>50 - 80 €</span></label>
+        <label class="filter-check"><input type="checkbox" value="80to120"> <span>80 - 120 €</span></label>
+        <label class="filter-check"><input type="checkbox" value="120to200"> <span>120 - 200 €</span></label>
         <label class="filter-check"><input type="checkbox" value="over200"> <span>Più di 200 €</span></label>
       </div>
       <div class="category-filter-wrap">
-        <strong>Categorie</strong>
+        <h2 id="categoryFilterHeading">Filtra per categoria</h2>
         <div class="category-options" id="categoryFilter" aria-label="Categorie"></div>
       </div>
     </section>
 
-    <section class="category-summary" aria-labelledby="summaryHeading">
-      <h2 id="summaryHeading">Stato delle categorie</h2>
+    <details class="category-summary" aria-labelledby="summaryHeading">
+      <summary id="summaryHeading">Stato delle categorie</summary>
       <div class="summary-list" id="categorySummary"></div>
-    </section>
+    </details>
 
     <section class="gifts-section" aria-live="polite">
       <div class="section-heading"><h2>Idee regalo</h2><span id="resultCount"></span></div>
@@ -75,6 +75,7 @@
       <h2 id="modalTitle"></h2>
       <p class="modal-price price" id="modalPrice"></p>
       <p class="modal-category" id="modalCategory"></p>
+      <p class="modal-group-warning" id="modalGroupWarning" hidden></p>
       <p class="modal-note" id="modalNote"></p>
       <div class="modal-links" id="modalLinks"></div>
       <button class="primary-button" id="modalReserveButton" type="button"></button>

@@ -84,7 +84,7 @@ function render() {
 
 function categoryKey(gift) { return gift.categories.map(category => category.toLowerCase().trim()).sort().join('|') || 'none'; }
 function categoryLabel(gift) { return gift.categories.length ? gift.categories.join(' · ') : 'Senza categoria'; }
-function renderCategorySummary() { const groups = {}; state.gifts.forEach(gift => { const key = categoryKey(gift); if (!groups[key]) groups[key] = { label: categoryLabel(gift), total: 0, reserved: 0 }; groups[key].total += 1; if (gift.reserved) groups[key].reserved += 1; }); categorySummary.innerHTML = Object.entries(groups).map(([key, counts]) => `<button class="summary-item ${state.categories.some(category => key.split('|').includes(category.toLowerCase())) ? 'is-active' : ''}" type="button" data-category-group="${escapeAttribute(key)}"><strong>${escapeHtml(counts.label)}</strong><span>${counts.reserved} di ${counts.total} scelti</span></button>`).join(''); }
+function renderCategorySummary() { const groups = {}; state.gifts.forEach(gift => { const key = categoryKey(gift); if (!groups[key]) groups[key] = { label: categoryLabel(gift), total: 0, reserved: 0 }; groups[key].total += 1; if (gift.reserved) groups[key].reserved += 1; }); categorySummary.innerHTML = Object.values(groups).map(counts => `<div class="summary-item"><strong>${escapeHtml(counts.label)}</strong><span>${counts.reserved} di ${counts.total} scelti</span></div>`).join(''); }
 
 function reservedGroupGift(gift) { return state.gifts.find(other => other.id !== gift.id && other.reserved && categoryKey(other) === categoryKey(gift)); }
 
@@ -115,6 +115,10 @@ function openGiftModal(gift) {
   document.querySelector('#modalTitle').textContent = gift.name;
   document.querySelector('#modalPrice').textContent = formatPrice(gift.price);
   document.querySelector('#modalCategory').textContent = gift.categories.join(' · ');
+  const reservedGroup = !gift.reserved ? reservedGroupGift(gift) : null;
+  const groupWarning = document.querySelector('#modalGroupWarning');
+  groupWarning.hidden = !reservedGroup;
+  groupWarning.textContent = reservedGroup ? `Attenzione: nella stessa categoria è già stato scelto "${reservedGroup.name}".` : '';
   document.querySelector('#modalNote').textContent = gift.note || 'Nessuna descrizione disponibile.';
   document.querySelector('#modalLinks').innerHTML = gift.links.length ? gift.links.map(link => `<a class="store-link" href="${safeUrl(link.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(link.label)}</a>`).join('') : '<span>Nessun link disponibile.</span>';
   const reservedByMe = gift.reserved && gift.reservedBy === state.sessionId;
@@ -176,7 +180,7 @@ function setDrawer(open) { cartDrawer.classList.toggle('is-open', open); cartDra
 
 document.querySelector('#filterOptions').addEventListener('change', event => { const input = event.target.closest('input'); if (!input) return; const inputs = [...document.querySelectorAll('#filterOptions input')]; if (input.value === 'all') inputs.forEach(item => { item.checked = item === input; }); else { document.querySelector('#filterOptions input[value="all"]').checked = false; } state.priceFilters = inputs.filter(item => item.checked && item.value !== 'all').map(item => item.value); render(); });
 categoryFilter.addEventListener('change', event => { const input = event.target.closest('input'); if (!input) return; const inputs = [...categoryFilter.querySelectorAll('input')]; if (input.value === 'all') inputs.forEach(item => { item.checked = item === input; }); else { categoryFilter.querySelector('input[value="all"]').checked = false; } state.categories = inputs.filter(item => item.checked && item.value !== 'all').map(item => item.value); render(); });
-categorySummary.addEventListener('click', event => { const button = event.target.closest('[data-category-group]'); if (!button) return; const groupGift = state.gifts.find(gift => categoryKey(gift) === button.dataset.categoryGroup); const categories = groupGift ? groupGift.categories : []; state.categories = categories; categoryFilter.querySelectorAll('input').forEach(input => { input.checked = input.value === 'all' ? categories.length === 0 : categories.some(category => category.toLowerCase() === input.value.toLowerCase()); }); render(); });
+
 giftGrid.addEventListener('click', event => { const target = event.target.closest('[data-action], [data-carousel], [data-carousel-index]'); if (!target) return; const gift = state.gifts.find(item => item.id === target.dataset.id); if (!gift) return; if (target.dataset.action === 'open-modal') openGiftModal(gift); if (target.dataset.carousel || target.dataset.carouselIndex) { const total = gift.photos.length; let index = state.carouselIndexes[gift.id] || 0; index = target.dataset.carousel === 'next' ? (index + 1) % total : target.dataset.carousel === 'prev' ? (index - 1 + total) % total : Number(target.dataset.carouselIndex); state.carouselIndexes[gift.id] = index; render(); } });
 modalGallery.addEventListener('click', event => { const target = event.target.closest('[data-modal-carousel]'); if (!target) return; const gift = state.gifts.find(item => item.id === state.activeGiftId); if (!gift) return; const total = gift.photos.length; const current = state.carouselIndexes[gift.id] || 0; state.carouselIndexes[gift.id] = target.dataset.modalCarousel === 'next' ? (current + 1) % total : (current - 1 + total) % total; renderModalGallery(gift); });
 document.querySelector('#modalReserveButton').addEventListener('click', event => { if (event.currentTarget.dataset.id) changeReservation(event.currentTarget.dataset.id, 'prenota'); });
