@@ -16,10 +16,10 @@
     <div class="header-inner">
       <div>
         <p class="eyebrow">Una scelta speciale</p>
-        <h1>La mia wishlist</h1>
+        <h1>La wishlist di tartaretta</h1>
       </div>
       <button class="cart-button" id="cartButton" type="button" aria-label="Apri i miei regali scelti" aria-controls="cartDrawer" aria-expanded="false">
-        <span class="bag-icon" aria-hidden="true">♡</span>
+        <span class="bag-icon" aria-hidden="true"><icon class="icon-heart"></icon></span>
         <span class="cart-label">I miei regali</span>
         <span class="badge" id="cartCount">0</span>
       </button>
@@ -38,20 +38,18 @@
     <section class="filter-bar" aria-labelledby="filterHeading">
       <h2 id="filterHeading">Filtra per prezzo</h2>
       <div class="filter-options" id="filterOptions" role="group" aria-label="Fasce di prezzo">
-        <button class="filter-button is-active" type="button" data-filter="all">Tutti</button>
-        <button class="filter-button" type="button" data-filter="under30">Meno di 30 €</button>
-        <button class="filter-button" type="button" data-filter="under50">Meno di 50 €</button>
-        <button class="filter-button" type="button" data-filter="30to50">30 € - 50 €</button>
-        <button class="filter-button" type="button" data-filter="50to80">50 € - 80 €</button>
-        <button class="filter-button" type="button" data-filter="80to120">80 € - 120 €</button>
-        <button class="filter-button" type="button" data-filter="120to200">120 € - 200 €</button>
-        <button class="filter-button" type="button" data-filter="over200">Più di 200 €</button>
+        <label class="filter-check"><input type="checkbox" value="all" checked> <span>Tutti</span></label>
+        <label class="filter-check"><input type="checkbox" value="under30"> <span>Meno di 30 €</span></label>
+        <label class="filter-check"><input type="checkbox" value="under50"> <span>Meno di 50 €</span></label>
+        <label class="filter-check"><input type="checkbox" value="30to50"> <span>30 € - 50 €</span></label>
+        <label class="filter-check"><input type="checkbox" value="50to80"> <span>50 € - 80 €</span></label>
+        <label class="filter-check"><input type="checkbox" value="80to120"> <span>80 € - 120 €</span></label>
+        <label class="filter-check"><input type="checkbox" value="120to200"> <span>120 € - 200 €</span></label>
+        <label class="filter-check"><input type="checkbox" value="over200"> <span>Più di 200 €</span></label>
       </div>
       <div class="category-filter-wrap">
-        <label for="categoryFilter">Categoria</label>
-        <select id="categoryFilter">
-          <option value="all">Tutte le categorie</option>
-        </select>
+        <strong>Categorie</strong>
+        <div class="category-options" id="categoryFilter" aria-label="Categorie"></div>
       </div>
     </section>
 

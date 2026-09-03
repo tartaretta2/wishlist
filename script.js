@@ -1,7 +1,7 @@
 const API_URL = 'https://script.google.com/macros/s/AKfycbwKvhwq4qTAzimrlpvSPA2psz4618xsz4UuHirPih6pa0RTRGnI0c5moxtxjYbsStOgQw/exec';
 const SESSION_KEY = 'wishlist-session-id';
 
-const state = { gifts: [], filter: 'all', category: 'all', sessionId: getSessionId(), carouselIndexes: {}, activeGiftId: null };
+const state = { gifts: [], priceFilters: [], categories: [], sessionId: getSessionId(), carouselIndexes: {}, activeGiftId: null };
 const giftGrid = document.querySelector('#giftGrid');
 const stateMessage = document.querySelector('#stateMessage');
 const resultCount = document.querySelector('#resultCount');
@@ -52,7 +52,7 @@ async function loadApiState() {
   if (!response.ok || !data.success) throw new Error(data.error || 'Impossibile sincronizzare le prenotazioni.');
   return data;
 }
-function populateCategories() { const categories = [...new Set(state.gifts.flatMap(gift => gift.categories))].sort(); categoryFilter.innerHTML = '<option value="all">Tutte le categorie</option>' + categories.map(category => `<option value="${escapeAttribute(category)}">${escapeHtml(category)}</option>`).join(''); }
+function populateCategories() { const categories = [...new Set(state.gifts.flatMap(gift => gift.categories))].sort(); categoryFilter.innerHTML = '<label class="filter-check"><input type="checkbox" value="all" checked> <span>Tutte</span></label>' + categories.map(category => `<label class="filter-check"><input type="checkbox" value="${escapeAttribute(category)}"> <span>${escapeHtml(category)}</span></label>`).join(''); }
 
 function filteredGifts() {
   return state.gifts.filter(gift => {
@@ -67,7 +67,9 @@ function filteredGifts() {
       '120to200': price.max >= 120 && price.min <= 200,
       over200: price.max > 200
     };
-    return filters[state.filter] && (state.category === 'all' || gift.categories.includes(state.category));
+    const priceMatches = state.priceFilters.length === 0 || state.priceFilters.some(filter => filters[filter]);
+    const categoryMatches = state.categories.length === 0 || state.categories.every(category => gift.categories.some(giftCategory => giftCategory.toLowerCase() === category.toLowerCase()));
+    return priceMatches && categoryMatches;
   });
 }
 
@@ -80,17 +82,24 @@ function render() {
   renderCategorySummary();
 }
 
-function renderCategorySummary() { const groups = {}; state.gifts.forEach(gift => { const group = gift.categories.length ? gift.categories.join(' · ') : 'Senza categoria'; if (!groups[group]) groups[group] = { total: 0, reserved: 0 }; groups[group].total += 1; if (gift.reserved) groups[group].reserved += 1; }); categorySummary.innerHTML = Object.entries(groups).map(([category, counts]) => `<div class="summary-item"><strong>${escapeHtml(category)}</strong><span>${counts.reserved} di ${counts.total} scelti</span></div>`).join(''); }
+function categoryKey(gift) { return gift.categories.map(category => category.toLowerCase().trim()).sort().join('|') || 'none'; }
+function categoryLabel(gift) { return gift.categories.length ? gift.categories.join(' · ') : 'Senza categoria'; }
+function renderCategorySummary() { const groups = {}; state.gifts.forEach(gift => { const key = categoryKey(gift); if (!groups[key]) groups[key] = { label: categoryLabel(gift), total: 0, reserved: 0 }; groups[key].total += 1; if (gift.reserved) groups[key].reserved += 1; }); categorySummary.innerHTML = Object.entries(groups).map(([key, counts]) => `<button class="summary-item ${state.categories.some(category => key.split('|').includes(category.toLowerCase())) ? 'is-active' : ''}" type="button" data-category-group="${escapeAttribute(key)}"><strong>${escapeHtml(counts.label)}</strong><span>${counts.reserved} di ${counts.total} scelti</span></button>`).join(''); }
+
+function reservedGroupGift(gift) { return state.gifts.find(other => other.id !== gift.id && other.reserved && categoryKey(other) === categoryKey(gift)); }
 
 function renderGiftCard(gift) {
   const photos = gift.photos?.length ? gift.photos : [];
   const index = state.carouselIndexes[gift.id] || 0;
   const reservedByMe = gift.reserved && gift.reservedBy === state.sessionId;
+  const reservedGroup = !gift.reserved ? reservedGroupGift(gift) : null;
   const photo = photos[index] || '';
   const photoMarkup = photo ? `<img src="${escapeAttribute(photo)}" alt="" loading="lazy">` : '<div class="photo-placeholder" aria-hidden="true">♡</div>';
   const controls = photos.length > 1 ? `<button class="carousel-button prev" type="button" data-carousel="prev" data-id="${escapeAttribute(gift.id)}" aria-label="Foto precedente">‹</button><button class="carousel-button next" type="button" data-carousel="next" data-id="${escapeAttribute(gift.id)}" aria-label="Foto successiva">›</button><div class="dots">${photos.map((_, dotIndex) => `<button class="dot ${dotIndex === index ? 'is-active' : ''}" type="button" data-carousel-index="${dotIndex}" data-id="${escapeAttribute(gift.id)}" aria-label="Vai alla foto ${dotIndex + 1}"></button>`).join('')}</div>` : '';
   const links = (gift.links || []).map(link => `<a class="store-link" href="${safeUrl(link.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(link.label)}</a>`).join(' · ');
-  return `<article class="gift-card" data-action="open-modal" data-id="${escapeAttribute(gift.id)}"><div class="photo-frame">${photoMarkup}${controls}</div><div class="card-content"><h3>${escapeHtml(gift.name || 'Regalo senza nome')}</h3><p class="price">${formatPrice(gift.price)}</p><p class="card-open-hint">Apri per dettagli, note e siti</p></div></article>`;
+  const unavailable = gift.reserved ? '<div class="reserved-ribbon">Già scelto</div>' : '';
+  const groupWarning = reservedGroup ? `<div class="group-warning" title="Già scelto: ${escapeAttribute(reservedGroup.name)}" aria-label="Già scelto: ${escapeAttribute(reservedGroup.name)}">⚠</div>` : '';
+  return `<article class="gift-card ${gift.reserved ? 'is-reserved' : ''}" data-action="open-modal" data-id="${escapeAttribute(gift.id)}">${unavailable}${groupWarning}<div class="photo-frame">${photoMarkup}${controls}</div><div class="card-content"><h3>${escapeHtml(gift.name || 'Regalo senza nome')}</h3><p class="price">${formatPrice(gift.price)}</p><p class="card-open-hint">Apri per dettagli, note e siti</p></div></article>`;
 }
 
 function getPriceRange(gift) {
@@ -165,8 +174,9 @@ function showState(message, isError = false) { stateMessage.hidden = false; stat
 function showToast(message) { toast.textContent = message; toast.classList.add('is-visible'); clearTimeout(showToast.timer); showToast.timer = setTimeout(() => toast.classList.remove('is-visible'), 3500); }
 function setDrawer(open) { cartDrawer.classList.toggle('is-open', open); cartDrawer.setAttribute('aria-hidden', String(!open)); drawerBackdrop.hidden = !open; document.querySelector('#cartButton').setAttribute('aria-expanded', String(open)); if (open) document.querySelector('#closeCartButton').focus(); }
 
-document.querySelector('#filterOptions').addEventListener('click', event => { const button = event.target.closest('[data-filter]'); if (!button) return; state.filter = button.dataset.filter; document.querySelectorAll('.filter-button').forEach(item => item.classList.toggle('is-active', item === button)); render(); });
-categoryFilter.addEventListener('change', event => { state.category = event.target.value; render(); });
+document.querySelector('#filterOptions').addEventListener('change', event => { const input = event.target.closest('input'); if (!input) return; const inputs = [...document.querySelectorAll('#filterOptions input')]; if (input.value === 'all') inputs.forEach(item => { item.checked = item === input; }); else { document.querySelector('#filterOptions input[value="all"]').checked = false; } state.priceFilters = inputs.filter(item => item.checked && item.value !== 'all').map(item => item.value); render(); });
+categoryFilter.addEventListener('change', event => { const input = event.target.closest('input'); if (!input) return; const inputs = [...categoryFilter.querySelectorAll('input')]; if (input.value === 'all') inputs.forEach(item => { item.checked = item === input; }); else { categoryFilter.querySelector('input[value="all"]').checked = false; } state.categories = inputs.filter(item => item.checked && item.value !== 'all').map(item => item.value); render(); });
+categorySummary.addEventListener('click', event => { const button = event.target.closest('[data-category-group]'); if (!button) return; const groupGift = state.gifts.find(gift => categoryKey(gift) === button.dataset.categoryGroup); const categories = groupGift ? groupGift.categories : []; state.categories = categories; categoryFilter.querySelectorAll('input').forEach(input => { input.checked = input.value === 'all' ? categories.length === 0 : categories.some(category => category.toLowerCase() === input.value.toLowerCase()); }); render(); });
 giftGrid.addEventListener('click', event => { const target = event.target.closest('[data-action], [data-carousel], [data-carousel-index]'); if (!target) return; const gift = state.gifts.find(item => item.id === target.dataset.id); if (!gift) return; if (target.dataset.action === 'open-modal') openGiftModal(gift); if (target.dataset.carousel || target.dataset.carouselIndex) { const total = gift.photos.length; let index = state.carouselIndexes[gift.id] || 0; index = target.dataset.carousel === 'next' ? (index + 1) % total : target.dataset.carousel === 'prev' ? (index - 1 + total) % total : Number(target.dataset.carouselIndex); state.carouselIndexes[gift.id] = index; render(); } });
 modalGallery.addEventListener('click', event => { const target = event.target.closest('[data-modal-carousel]'); if (!target) return; const gift = state.gifts.find(item => item.id === state.activeGiftId); if (!gift) return; const total = gift.photos.length; const current = state.carouselIndexes[gift.id] || 0; state.carouselIndexes[gift.id] = target.dataset.modalCarousel === 'next' ? (current + 1) % total : (current - 1 + total) % total; renderModalGallery(gift); });
 document.querySelector('#modalReserveButton').addEventListener('click', event => { if (event.currentTarget.dataset.id) changeReservation(event.currentTarget.dataset.id, 'prenota'); });
