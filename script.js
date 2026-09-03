@@ -1,7 +1,7 @@
 const API_URL = 'https://script.google.com/macros/s/AKfycbwKvhwq4qTAzimrlpvSPA2psz4618xsz4UuHirPih6pa0RTRGnI0c5moxtxjYbsStOgQw/exec';
 const SESSION_KEY = 'wishlist-session-id';
 
-const state = { gifts: [], filter: 'all', sessionId: getSessionId(), carouselIndexes: {}, expandedCards: {} };
+const state = { gifts: [], filter: 'all', category: 'all', sessionId: getSessionId(), carouselIndexes: {}, activeGiftId: null };
 const giftGrid = document.querySelector('#giftGrid');
 const stateMessage = document.querySelector('#stateMessage');
 const resultCount = document.querySelector('#resultCount');
@@ -10,6 +10,11 @@ const cartDrawer = document.querySelector('#cartDrawer');
 const drawerBackdrop = document.querySelector('#drawerBackdrop');
 const cartList = document.querySelector('#cartList');
 const toast = document.querySelector('#toast');
+const categoryFilter = document.querySelector('#categoryFilter');
+const categorySummary = document.querySelector('#categorySummary');
+const giftModal = document.querySelector('#giftModal');
+const modalBackdrop = document.querySelector('#modalBackdrop');
+const modalGallery = document.querySelector('#modalGallery');
 
 function getSessionId() {
   let sessionId = localStorage.getItem(SESSION_KEY);
@@ -26,15 +31,28 @@ async function loadGifts() {
     return;
   }
   try {
-    const response = await fetch(API_URL, { cache: 'no-store' });
-    const data = await response.json();
-    if (!response.ok || !data.success) throw new Error(data.error || 'Impossibile caricare i regali.');
-    state.gifts = data.gifts || [];
+    const data = await loadApiState();
+    state.gifts = (data.gifts || []).map(gift => ({
+      ...gift,
+      id: String(gift.id),
+      categories: Array.isArray(gift.categories) ? gift.categories : [],
+      links: Array.isArray(gift.links) ? gift.links : [],
+      photos: Array.isArray(gift.photos) ? gift.photos : []
+    }));
+    populateCategories();
     render();
   } catch (error) {
     showState(error.message, true);
   }
 }
+
+async function loadApiState() {
+  const response = await fetch(API_URL, { cache: 'no-store' });
+  const data = await response.json();
+  if (!response.ok || !data.success) throw new Error(data.error || 'Impossibile sincronizzare le prenotazioni.');
+  return data;
+}
+function populateCategories() { const categories = [...new Set(state.gifts.flatMap(gift => gift.categories))].sort(); categoryFilter.innerHTML = '<option value="all">Tutte le categorie</option>' + categories.map(category => `<option value="${escapeAttribute(category)}">${escapeHtml(category)}</option>`).join(''); }
 
 function filteredGifts() {
   return state.gifts.filter(gift => {
@@ -49,7 +67,7 @@ function filteredGifts() {
       '120to200': price.max >= 120 && price.min <= 200,
       over200: price.max > 200
     };
-    return filters[state.filter];
+    return filters[state.filter] && (state.category === 'all' || gift.categories.includes(state.category));
   });
 }
 
@@ -59,7 +77,10 @@ function render() {
   stateMessage.hidden = gifts.length > 0;
   giftGrid.innerHTML = gifts.map(renderGiftCard).join('');
   updateCart();
+  renderCategorySummary();
 }
+
+function renderCategorySummary() { const groups = {}; state.gifts.forEach(gift => { const group = gift.categories.length ? gift.categories.join(' · ') : 'Senza categoria'; if (!groups[group]) groups[group] = { total: 0, reserved: 0 }; groups[group].total += 1; if (gift.reserved) groups[group].reserved += 1; }); categorySummary.innerHTML = Object.entries(groups).map(([category, counts]) => `<div class="summary-item"><strong>${escapeHtml(category)}</strong><span>${counts.reserved} di ${counts.total} scelti</span></div>`).join(''); }
 
 function renderGiftCard(gift) {
   const photos = gift.photos?.length ? gift.photos : [];
@@ -69,10 +90,7 @@ function renderGiftCard(gift) {
   const photoMarkup = photo ? `<img src="${escapeAttribute(photo)}" alt="" loading="lazy">` : '<div class="photo-placeholder" aria-hidden="true">♡</div>';
   const controls = photos.length > 1 ? `<button class="carousel-button prev" type="button" data-carousel="prev" data-id="${escapeAttribute(gift.id)}" aria-label="Foto precedente">‹</button><button class="carousel-button next" type="button" data-carousel="next" data-id="${escapeAttribute(gift.id)}" aria-label="Foto successiva">›</button><div class="dots">${photos.map((_, dotIndex) => `<button class="dot ${dotIndex === index ? 'is-active' : ''}" type="button" data-carousel-index="${dotIndex}" data-id="${escapeAttribute(gift.id)}" aria-label="Vai alla foto ${dotIndex + 1}"></button>`).join('')}</div>` : '';
   const links = (gift.links || []).map(link => `<a class="store-link" href="${safeUrl(link.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(link.label)}</a>`).join(' · ');
-  const note = gift.note ? `<p class="gift-note">${escapeHtml(gift.note)}</p>` : '<p class="gift-note">Nessuna nota disponibile.</p>';
-  const expanded = state.expandedCards[gift.id] === true;
-  const details = `<div class="card-details" ${expanded ? '' : 'hidden'}>${note}${links ? `<div class="store-links">${links}</div>` : '<p class="store-links">Nessun link disponibile.</p>'}<button class="primary-button" type="button" data-action="reserve" data-id="${escapeAttribute(gift.id)}" ${gift.reserved ? 'disabled' : ''}>${reservedByMe ? 'Scelto da te' : gift.reserved ? 'Già scelto' : 'Scegli questo regalo'}</button></div>`;
-  return `<article class="gift-card"><div class="photo-frame">${photoMarkup}${controls}</div><div class="card-content"><button class="card-toggle" type="button" data-action="toggle" data-id="${escapeAttribute(gift.id)}" aria-expanded="${expanded}"><span><strong>${escapeHtml(gift.name || 'Regalo senza nome')}</strong><span class="price">${formatPrice(gift.price)}</span></span><span class="toggle-icon" aria-hidden="true">${expanded ? '−' : '+'}</span></button>${details}</div></article>`;
+  return `<article class="gift-card" data-action="open-modal" data-id="${escapeAttribute(gift.id)}"><div class="photo-frame">${photoMarkup}${controls}</div><div class="card-content"><h3>${escapeHtml(gift.name || 'Regalo senza nome')}</h3><p class="price">${formatPrice(gift.price)}</p><p class="card-open-hint">Apri per dettagli, note e siti</p></div></article>`;
 }
 
 function getPriceRange(gift) {
@@ -82,6 +100,33 @@ function getPriceRange(gift) {
   const value = Number(gift.price) || 0;
   return { min: value, max: value };
 }
+
+function openGiftModal(gift) {
+  state.activeGiftId = gift.id;
+  document.querySelector('#modalTitle').textContent = gift.name;
+  document.querySelector('#modalPrice').textContent = formatPrice(gift.price);
+  document.querySelector('#modalCategory').textContent = gift.categories.join(' · ');
+  document.querySelector('#modalNote').textContent = gift.note || 'Nessuna descrizione disponibile.';
+  document.querySelector('#modalLinks').innerHTML = gift.links.length ? gift.links.map(link => `<a class="store-link" href="${safeUrl(link.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(link.label)}</a>`).join('') : '<span>Nessun link disponibile.</span>';
+  const reservedByMe = gift.reserved && gift.reservedBy === state.sessionId;
+  const button = document.querySelector('#modalReserveButton');
+  button.textContent = reservedByMe ? 'Scelto da te' : gift.reserved ? 'Già scelto' : 'Scegli questo regalo';
+  button.disabled = gift.reserved;
+  button.dataset.id = gift.id;
+  renderModalGallery(gift);
+  giftModal.classList.add('is-open');
+  giftModal.setAttribute('aria-hidden', 'false');
+  modalBackdrop.hidden = false;
+  document.querySelector('#closeModalButton').focus();
+}
+
+function renderModalGallery(gift) {
+  const photos = gift.photos || [];
+  const index = state.carouselIndexes[gift.id] || 0;
+  modalGallery.innerHTML = photos.length ? `<img src="${escapeAttribute(photos[index])}" alt="${escapeAttribute(gift.name)}"><div class="modal-gallery-controls">${photos.length > 1 ? `<button type="button" data-modal-carousel="prev" aria-label="Foto precedente">‹</button><span>${index + 1} / ${photos.length}</span><button type="button" data-modal-carousel="next" aria-label="Foto successiva">›</button>` : ''}</div>` : '<div class="photo-placeholder">♡</div>';
+}
+
+function closeGiftModal() { giftModal.classList.remove('is-open'); giftModal.setAttribute('aria-hidden', 'true'); modalBackdrop.hidden = true; state.activeGiftId = null; }
 
 function updateCart() {
   const selected = state.gifts.filter(gift => gift.reserved && gift.reservedBy === state.sessionId);
@@ -121,8 +166,12 @@ function showToast(message) { toast.textContent = message; toast.classList.add('
 function setDrawer(open) { cartDrawer.classList.toggle('is-open', open); cartDrawer.setAttribute('aria-hidden', String(!open)); drawerBackdrop.hidden = !open; document.querySelector('#cartButton').setAttribute('aria-expanded', String(open)); if (open) document.querySelector('#closeCartButton').focus(); }
 
 document.querySelector('#filterOptions').addEventListener('click', event => { const button = event.target.closest('[data-filter]'); if (!button) return; state.filter = button.dataset.filter; document.querySelectorAll('.filter-button').forEach(item => item.classList.toggle('is-active', item === button)); render(); });
-giftGrid.addEventListener('click', event => { const target = event.target.closest('[data-action], [data-carousel], [data-carousel-index]'); if (!target) return; const gift = state.gifts.find(item => item.id === target.dataset.id); if (!gift) return; if (target.dataset.action === 'toggle') { state.expandedCards[gift.id] = !state.expandedCards[gift.id]; render(); } if (target.dataset.action === 'reserve') changeReservation(gift.id, 'prenota'); if (target.dataset.carousel || target.dataset.carouselIndex) { const total = gift.photos.length; let index = state.carouselIndexes[gift.id] || 0; index = target.dataset.carousel === 'next' ? (index + 1) % total : target.dataset.carousel === 'prev' ? (index - 1 + total) % total : Number(target.dataset.carouselIndex); state.carouselIndexes[gift.id] = index; render(); } });
+categoryFilter.addEventListener('change', event => { state.category = event.target.value; render(); });
+giftGrid.addEventListener('click', event => { const target = event.target.closest('[data-action], [data-carousel], [data-carousel-index]'); if (!target) return; const gift = state.gifts.find(item => item.id === target.dataset.id); if (!gift) return; if (target.dataset.action === 'open-modal') openGiftModal(gift); if (target.dataset.carousel || target.dataset.carouselIndex) { const total = gift.photos.length; let index = state.carouselIndexes[gift.id] || 0; index = target.dataset.carousel === 'next' ? (index + 1) % total : target.dataset.carousel === 'prev' ? (index - 1 + total) % total : Number(target.dataset.carouselIndex); state.carouselIndexes[gift.id] = index; render(); } });
+modalGallery.addEventListener('click', event => { const target = event.target.closest('[data-modal-carousel]'); if (!target) return; const gift = state.gifts.find(item => item.id === state.activeGiftId); if (!gift) return; const total = gift.photos.length; const current = state.carouselIndexes[gift.id] || 0; state.carouselIndexes[gift.id] = target.dataset.modalCarousel === 'next' ? (current + 1) % total : (current - 1 + total) % total; renderModalGallery(gift); });
+document.querySelector('#modalReserveButton').addEventListener('click', event => { if (event.currentTarget.dataset.id) changeReservation(event.currentTarget.dataset.id, 'prenota'); });
+document.querySelector('#closeModalButton').addEventListener('click', closeGiftModal); modalBackdrop.addEventListener('click', closeGiftModal);
 cartList.addEventListener('click', event => { const button = event.target.closest('[data-action="unreserve"]'); if (button) changeReservation(button.dataset.id, 'sprenota'); });
 document.querySelector('#cartButton').addEventListener('click', () => setDrawer(true)); document.querySelector('#closeCartButton').addEventListener('click', () => setDrawer(false)); drawerBackdrop.addEventListener('click', () => setDrawer(false));
-document.addEventListener('keydown', event => { if (event.key === 'Escape') setDrawer(false); });
+document.addEventListener('keydown', event => { if (event.key === 'Escape') { setDrawer(false); closeGiftModal(); } });
 loadGifts();

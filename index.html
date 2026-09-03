@@ -47,6 +47,17 @@
         <button class="filter-button" type="button" data-filter="120to200">120 € - 200 €</button>
         <button class="filter-button" type="button" data-filter="over200">Più di 200 €</button>
       </div>
+      <div class="category-filter-wrap">
+        <label for="categoryFilter">Categoria</label>
+        <select id="categoryFilter">
+          <option value="all">Tutte le categorie</option>
+        </select>
+      </div>
+    </section>
+
+    <section class="category-summary" aria-labelledby="summaryHeading">
+      <h2 id="summaryHeading">Stato delle categorie</h2>
+      <div class="summary-list" id="categorySummary"></div>
     </section>
 
     <section class="gifts-section" aria-live="polite">
@@ -57,6 +68,20 @@
   </main>
 
   <div class="drawer-backdrop" id="drawerBackdrop" hidden></div>
+  <div class="modal-backdrop" id="modalBackdrop" hidden></div>
+  <section class="gift-modal" id="giftModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-hidden="true">
+    <button class="icon-button modal-close" id="closeModalButton" type="button" aria-label="Chiudi dettagli regalo">×</button>
+    <div class="modal-gallery" id="modalGallery"></div>
+    <div class="modal-content">
+      <p class="eyebrow">Dettagli regalo</p>
+      <h2 id="modalTitle"></h2>
+      <p class="modal-price price" id="modalPrice"></p>
+      <p class="modal-category" id="modalCategory"></p>
+      <p class="modal-note" id="modalNote"></p>
+      <div class="modal-links" id="modalLinks"></div>
+      <button class="primary-button" id="modalReserveButton" type="button"></button>
+    </div>
+  </section>
   <aside class="cart-drawer" id="cartDrawer" aria-labelledby="cartTitle" aria-hidden="true">
     <div class="drawer-header">
       <div><p class="eyebrow">Le tue scelte</p><h2 id="cartTitle">I miei regali</h2></div>

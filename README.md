@@ -28,7 +28,7 @@ Il codice usa `LockService` per evitare che due persone prenotino contemporaneam
 3. Pubblica i quattro file `index.html`, `style.css`, `script.js` e `README.md` in un repository GitHub.
 4. In **Settings > Pages**, scegli il branch e la cartella da pubblicare.
 
-Il browser crea automaticamente un `sessionId` casuale e lo conserva in `localStorage`. Non vengono richiesti account o dati personali. Per una nuova sessione su quello stesso browser è sufficiente cancellare i dati del sito.
+Il browser crea automaticamente un `sessionId` casuale e lo conserva in `localStorage`. Non vengono richiesti account o dati personali. Il CSV eventualmente presente nel repository è solo documentazione: il sito legge sempre e solo i dati restituiti dal Web App Apps Script. Per una nuova sessione su quello stesso browser è sufficiente cancellare i dati del sito.
 
 ## Formato di esempio
 
